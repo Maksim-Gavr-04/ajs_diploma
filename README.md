@@ -2,7 +2,7 @@
 
 ###### tags: `netology` `advanced js`
 
-[![Build status](https://ci.appveyor.com/api/projects/status/l0r5l6f916t44w96?svg=true)](https://ci.appveyor.com/project/Maksim-Gavr-04/ajs-diploma)
+[![Build status](https://ci.appveyor.com/api/projects/status/5ophrwex0u2tecde?svg=true)](https://ci.appveyor.com/project/Maksim-Gavr-04/ajs-diploma)
 
 ## Предыстория
 
