@@ -1,4 +1,4 @@
-# Дипломное задание к курсу «Продвинутый JavaScript». `Retro Game`
+# Дипломное задание по курсу «Продвинутый JavaScript». `Retro Game`
 
 ###### tags: `netology` `advanced js`
 
