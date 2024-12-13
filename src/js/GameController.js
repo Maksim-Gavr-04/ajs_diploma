@@ -21,8 +21,8 @@ export default class GameController {
 
     this.isBoardBlocked = false;
     this.pointsStatistics = [];
-    this.playersTypes = [ Bowman, Swordsman, Magician ];
-    this.opponentsTypes = [ Vampire, Undead, Daemon ];
+    this.playersTypes = [ Bowman ];
+    this.opponentsTypes = [ Bowman ];
 
     this.playersTeam = generateTeam(this.playersTypes, 1, 2);
     this.opponentsTeam = generateTeam(this.opponentsTypes, 1, 2);
@@ -232,6 +232,9 @@ export default class GameController {
         } else if (opponent.character.type === 'daemon') {
           character = new Daemon(opponent.character.level);
           this.opponentsTeam.push(character);
+        } else if (opponent.character.type === 'bowman') {
+          character = new Bowman(opponent.character.level);
+          this.opponentsTeam.push(character);
         }
 
         character.attack = opponent.character.attack;
@@ -242,6 +245,7 @@ export default class GameController {
 
       this.gamePlay.drawUi(themes[this.gameState.level]);
       this.gamePlay.redrawPositions([ ...this.positionsOfPlayersTeam, ...this.positionsOfOpponentsTeam ]);
+      this.gamePlay.selectCell(this.gameState.selectedCell);
       GamePlay.showMessage('Игра загружена!');
     } catch (error) {
       GamePlay.showMessage('Игру загрузить не удаётся :(');
