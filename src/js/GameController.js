@@ -8,10 +8,12 @@ import Daemon from './Characters/Daemon';
 import GamePlay from './GamePlay';
 import GameState from './GameState';
 import PositionedCharacter from './PositionedCharacter';
+import teamPositioning from './teamPositioning';
 import { generateTeam } from './generators';
+import { calcCellIndexesForMovementOrAttack } from './utils';
+import tooltipAboutCharacter from './tooltipAboutCharacter';
 import cursors from './cursors';
 import themes from './themes';
-import tooltipAboutCharacter from './tooltipAboutCharacter';
 
 export default class GameController {
   constructor(gamePlay, stateService) {
@@ -21,16 +23,16 @@ export default class GameController {
 
     this.isBoardBlocked = false;
     this.pointsStatistics = [];
-    this.playersTypes = [ Bowman ];
-    this.opponentsTypes = [ Bowman ];
+    this.playersTypes = [ Bowman, Swordsman, Magician ];
+    this.opponentsTypes = [ Vampire, Undead, Daemon ];
 
     this.playersTeam = generateTeam(this.playersTypes, 1, 2);
     this.opponentsTeam = generateTeam(this.opponentsTypes, 1, 2);
 
     /** @property массив объектов класса `PositionedCharacter` */
-    this.positionsOfPlayersTeam = this.teamPositioning(this.playersTeam, this.playersInitialCellIndexes());
+    this.positionsOfPlayersTeam = teamPositioning(this.playersTeam, this.gamePlay.boardSize, 'players');
     /** @property массив объектов класса `PositionedCharacter` */
-    this.positionsOfOpponentsTeam = this.teamPositioning(this.opponentsTeam, this.opponentsInitialCellIndexes());
+    this.positionsOfOpponentsTeam = teamPositioning(this.opponentsTeam, this.gamePlay.boardSize, 'opponents');
   }
 
   init() {
@@ -162,8 +164,8 @@ export default class GameController {
 
     this.playersTeam = generateTeam(this.playersTypes, 1, 2);
     this.opponentsTeam = generateTeam(this.opponentsTypes, 1, 2);
-    this.positionsOfPlayersTeam = this.teamPositioning(this.playersTeam, this.playersInitialCellIndexes());
-    this.positionsOfOpponentsTeam = this.teamPositioning(this.opponentsTeam, this.opponentsInitialCellIndexes());
+    this.positionsOfPlayersTeam = teamPositioning(this.playersTeam, this.gamePlay.boardSize, 'players');
+    this.positionsOfOpponentsTeam = teamPositioning(this.opponentsTeam, this.gamePlay.boardSize, 'opponents');
 
     this.gamePlay.drawUi(themes[this.gameState.level]);
     this.gamePlay.redrawPositions([ ...this.positionsOfPlayersTeam, ...this.positionsOfOpponentsTeam ]);
@@ -232,9 +234,6 @@ export default class GameController {
         } else if (opponent.character.type === 'daemon') {
           character = new Daemon(opponent.character.level);
           this.opponentsTeam.push(character);
-        } else if (opponent.character.type === 'bowman') {
-          character = new Bowman(opponent.character.level);
-          this.opponentsTeam.push(character);
         }
 
         character.attack = opponent.character.attack;
@@ -245,7 +244,7 @@ export default class GameController {
 
       this.gamePlay.drawUi(themes[this.gameState.level]);
       this.gamePlay.redrawPositions([ ...this.positionsOfPlayersTeam, ...this.positionsOfOpponentsTeam ]);
-      this.gamePlay.selectCell(this.gameState.selectedCell);
+      if (this.gameState.selectedCell) this.gamePlay.selectCell(this.gameState.selectedCell);
       GamePlay.showMessage('Игра загружена!');
     } catch (error) {
       GamePlay.showMessage('Игру загрузить не удаётся :(');
@@ -260,8 +259,9 @@ export default class GameController {
     let target = null;
 
     for (const opponent of [ ...this.positionsOfOpponentsTeam ]) {
-      const cellIndexesForAttack = this.distanceCalculation(opponent.character.attackDistance, opponent.position);
-
+      const cellIndexesForAttack = calcCellIndexesForMovementOrAttack(
+        opponent.character.attackDistance, opponent.position, this.gamePlay.boardSize
+      );
       [ ...this.positionsOfPlayersTeam ].forEach(player => {
         if (!cellIndexesForAttack.includes(player.position)) return;
 
@@ -277,7 +277,9 @@ export default class GameController {
       const indexOfOpponent = Math.floor(Math.random() * [ ...this.positionsOfOpponentsTeam ].length);
       attacker = [ ...this.positionsOfOpponentsTeam ][ indexOfOpponent ];
 
-      const cellIndexesForMovement = this.distanceCalculation(attacker.character.movementDistance, attacker.position);
+      const cellIndexesForMovement = calcCellIndexesForMovementOrAttack(
+        attacker.character.movementDistance, attacker.position, this.gamePlay.boardSize
+      );
       for (const cell of cellIndexesForMovement) {
         positionsOfTeams.forEach(instance => {
           if (cell !== instance.position) return;
@@ -331,8 +333,8 @@ export default class GameController {
         this.playersTeam = [ ...generateTeam(this.playersTypes, this.gameState.level, 1), ...remainingPlayersTeam ];
         this.opponentsTeam = generateTeam(this.opponentsTypes, this.gameState.level, this.playersTeam.length);
 
-        this.positionsOfPlayersTeam = this.teamPositioning(this.playersTeam, this.playersInitialCellIndexes());
-        this.positionsOfOpponentsTeam = this.teamPositioning(this.opponentsTeam, this.opponentsInitialCellIndexes());
+        this.positionsOfPlayersTeam = teamPositioning(this.playersTeam, this.gamePlay.boardSize, 'players');
+        this.positionsOfOpponentsTeam = teamPositioning(this.opponentsTeam, this.gamePlay.boardSize, 'opponents');
 
         this.gamePlay.drawUi(themes[this.gameState.level]);
         this.gamePlay.redrawPositions([ ...this.positionsOfPlayersTeam, ...this.positionsOfOpponentsTeam ]);
@@ -381,7 +383,9 @@ export default class GameController {
     if (this.gameState.selectedCell === null) return false;
 
     const character = this.characterOnCell(this.gameState.selectedCell).character;
-    const cellsForMovement = this.distanceCalculation(character.movementDistance, this.gameState.selectedCell);
+    const cellsForMovement = calcCellIndexesForMovementOrAttack(
+      character.movementDistance, this.gameState.selectedCell, this.gamePlay.boardSize
+    );
     return cellsForMovement.includes(cellIndex);
   }
 
@@ -389,81 +393,9 @@ export default class GameController {
     if (this.gameState.selectedCell === null) return false;
 
     const character = this.characterOnCell(this.gameState.selectedCell).character;
-    const cellsForAttack = this.distanceCalculation(character.attackDistance, this.gameState.selectedCell);
+    const cellsForAttack = calcCellIndexesForMovementOrAttack(
+      character.attackDistance, this.gameState.selectedCell, this.gamePlay.boardSize
+    );
     return cellsForAttack.includes(cellIndex);
-  }
-
-  playersInitialCellIndexes() {
-    const result = [];
-    const boardSize = this.gamePlay.boardSize;
-    for (let i = 0; i < boardSize ** 2; i += boardSize) {
-      result.push(i);
-      result.push(i + 1);
-    }
-
-    return result;
-  }
-
-  opponentsInitialCellIndexes() {
-    const result = [];
-    const boardSize = this.gamePlay.boardSize;
-    for (let i = boardSize - 1; i < boardSize ** 2; i += boardSize) {
-      result.push(i);
-      result.push(i - 1);
-    }
-
-    return result;
-  }
-
-  /**
-   * @param team результат метода `toArray()` экземпляра `Team`
-   * @param cellIndexes результат метода `playersInitialCellIndexes()` или `opponentsInitialCellIndexes()`
-   * @returns массив объектов класса `PositionedCharacter`
-   */
-  teamPositioning(team, cellIndexes) {
-    const copy = [ ...cellIndexes ];
-    const result = [];
-    team.forEach(member => {
-      const copyIndex = Math.floor(Math.random() * copy.length);
-      result.push(new PositionedCharacter(member, copy[copyIndex]));
-      copy.splice(copyIndex, 1);
-    });
-
-    return result;
-  }
-
-  /**
-   * @param distance свойство класса персонажа `movementDistance` или `attackDistance`
-   * @param cellIndex индекс ячейки с персонажем.
-   * @returns массив индексов ячеек.
-   */
-  distanceCalculation(distance, cellIndex) {
-    const boardSize = this.gamePlay.boardSize;
-    if (cellIndex >= boardSize ** 2) throw new Error('Unknown character cell index');
-
-    const row = Math.trunc(cellIndex / boardSize);
-    const column = cellIndex % boardSize;
-
-    const result = [];
-    for (let i = 1; i <= distance; i++) {
-      const up = row - i;
-      const down = row + i;
-      const left = column - i;
-      const right = column + i;
-      // Вверх и вниз:
-      if (up >= 0) result.push(up * 8 + column);
-      if (down <= 7) result.push(down * 8 + column);
-      // Влево и вправо:
-      if (left >= 0) result.push(row * 8 + left);
-      if (right <= 7) result.push(row * 8 + right);
-      // Вверх-влево и вверх-вправо:
-      if (up >= 0 && left >= 0) result.push(up * 8 + left);
-      if (up >= 0 && right <= 7) result.push(up * 8 + right);
-      // Вниз-влево и вниз-вправо:
-      if (down <= 7 && left >= 0) result.push(down * 8 + left);
-      if (down <= 7 && right <= 7) result.push(down * 8 + right);
-    }
-
-    return result;
   }
 }
