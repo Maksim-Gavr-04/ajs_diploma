@@ -64,13 +64,13 @@ export default class GameController {
     if (this.gameState.selectedCell === null) return;
 
     if (!this.gameState.isPlayer(cellIndex) && !this.gameState.isCellForMovement(cellIndex) && !this.gameState.isCellForAttack(cellIndex)) {
-      GamePlay.showError('Недопустимый действие!');
+      GamePlay.showError('Недопустимое действие!');
     }
     else if (!this.gameState.characterOnCell(cellIndex) && !this.gameState.isCellForMovement(cellIndex) && this.gameState.isCellForAttack(cellIndex)) {
-      GamePlay.showError('Недопустимый действие!');
+      GamePlay.showError('Недопустимое действие!');
     }
     else if (this.gameState.isOpponent(cellIndex) && this.gameState.isCellForMovement(cellIndex) && !this.gameState.isCellForAttack(cellIndex)) {
-      GamePlay.showError('Недопустимый действие!');
+      GamePlay.showError('Недопустимое действие!');
     }
 
     if (!this.gameState.characterOnCell(cellIndex) && this.gameState.isCellForMovement(cellIndex)) {
