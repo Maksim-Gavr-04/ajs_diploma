@@ -2,6 +2,7 @@ import PositionedCharacter from './PositionedCharacter';
 
 const playersInitialCellIndexes = boardSize => {
   const result = [];
+
   for (let i = 0; i < boardSize ** 2; i += boardSize) {
     result.push(i);
     result.push(i + 1);
@@ -12,6 +13,7 @@ const playersInitialCellIndexes = boardSize => {
 
 const opponentsInitialCellIndexes = boardSize => {
   const result = [];
+
   for (let i = boardSize - 1; i < boardSize ** 2; i += boardSize) {
     result.push(i);
     result.push(i - 1);
@@ -28,6 +30,7 @@ const opponentsInitialCellIndexes = boardSize => {
  */
 export default function teamPositioning(team, boardSize, playerOrOpponent) {
   const cellIndexes = [];
+
   if (playerOrOpponent === 'players') {
     cellIndexes.push(...playersInitialCellIndexes(boardSize));
   } else if (playerOrOpponent === 'opponents') {

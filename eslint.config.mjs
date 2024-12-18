@@ -48,7 +48,7 @@ export default [
     plugins: { '@stylistic/js': stylisticJs, },
     rules: {
       'max-len': [
-        'error', { code: 140 }
+        'error', { code: 155 }
       ], // длина строки, нет авто
       quotes: [
         'error', 'single'
